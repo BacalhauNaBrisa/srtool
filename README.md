@@ -1,3 +1,5 @@
+# ![Logótipo](https://github.com/BacalhauNaBrisa/srt_encoding_converter/raw/main/assets/logo.png)
+
 # SRT Encoding Converter
 
 A simple Streamlit app to detect and convert `.srt` subtitle files to UTF-8 encoding.
