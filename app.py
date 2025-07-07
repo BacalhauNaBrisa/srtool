@@ -4,6 +4,16 @@ import io
 
 st.set_page_config(page_title="SRT Encoding Converter", layout="centered")
 
+# Logo
+st.markdown(
+    """
+    <div style="text-align: center;">
+        <img src="https://github.com/BacalhauNaBrisa/srt_encoding_converter/raw/main/assets/logo.png" alt="App Logo" width="200"/>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 st.title("🎬 SRT Encoding Converter")
 
 st.markdown("Upload a `.srt` subtitle file and this app will detect its encoding. If it's not in UTF-8, you'll be able to convert and download it.")
