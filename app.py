@@ -4,7 +4,7 @@ import io
 
 st.set_page_config(page_title="SRT Encoding Converter", layout="centered")
 
-st.title("🎬 SRT Encoding to UTF-8 Converter")
+st.title("🎬 SRT Encoding Converter")
 
 st.markdown("Upload a `.srt` subtitle file and this app will detect its encoding. If it's not in UTF-8, you'll be able to convert and download it.")
 
