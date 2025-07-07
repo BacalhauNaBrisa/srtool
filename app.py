@@ -14,7 +14,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.title("🎬 SRT Encoding Converter")
+st.title("SRT Encoding Converter")
 
 st.markdown("Upload a `.srt` subtitle file and this app will detect its encoding. If it's not in UTF-8, you'll be able to convert and download it.")
 
