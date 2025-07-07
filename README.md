@@ -1,2 +1,13 @@
-# srt_encoding_converter
-Detects the text encoding format of a SRT (subtitle) file and converts it to UTF-8.
+# SRT UTF-8 Converter
+
+A simple Streamlit app to detect and convert `.srt` subtitle files to UTF-8 encoding.
+
+## Features
+- Detects encoding (e.g., Windows-1252, ISO-8859-1)
+- Converts non-UTF-8 files to UTF-8
+- Downloadable result
+
+## How to Run Locally
+```bash
+pip install -r requirements.txt
+streamlit run app.py
