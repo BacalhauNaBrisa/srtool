@@ -1,4 +1,4 @@
-# SRT UTF-8 Converter
+# SRT Encoding Converter
 
 A simple Streamlit app to detect and convert `.srt` subtitle files to UTF-8 encoding.
 
