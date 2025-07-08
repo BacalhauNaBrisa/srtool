@@ -112,9 +112,14 @@ with tabs[1]:
 
     if uploaded_shift_file and st.button("↔️ Shift Timestamps"):
         try:
-            raw_text = uploaded_shift_file.read().decode("utf-8")
+            # Try utf-8 first
+            try:
+                raw_text = uploaded_shift_file.read().decode("utf-8")
+            except UnicodeDecodeError:
+                uploaded_shift_file.seek(0)
+                raw_text = uploaded_shift_file.read().decode("utf-8-sig")
         except UnicodeDecodeError:
-            st.error("❌ File is not UTF-8. Please convert it first using the Converter tab.")
+            st.error("❌ File is not UTF-8 or UTF-8-SIG. Please convert it first using the Converter tab.")
             st.stop()
 
         try:
