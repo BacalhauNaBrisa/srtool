@@ -29,7 +29,9 @@ if uploaded_file:
 
     st.write(f"**Detected Encoding:** `{detected_encoding}` (Confidence: {confidence:.2f})")
 
-    if detected_encoding.lower() != "utf-8":
+    #if detected_encoding.lower() != "utf-8":
+    if detected_encoding.lower() not in ("utf-8", "utf-8-sig"):
+
         st.warning("The file is not in UTF-8 encoding.")
         
         if st.button("🔁 Convert to UTF-8"):
