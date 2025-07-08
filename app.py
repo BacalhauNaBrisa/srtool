@@ -4,7 +4,7 @@ import io
 import re
 from datetime import timedelta, datetime
 
-st.set_page_config(page_title="SRT Encoding Converter", layout="centered")
+st.set_page_config(page_title="SRTool", layout="centered")
 
 # Logo at top
 st.markdown(
@@ -16,7 +16,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.title("🎬 SRT Subtitle Utility Tool")
+st.title("🎬 SRTool")
 
 tabs = st.tabs(["🧪 Converter", "⏱ Shifter"])
 
