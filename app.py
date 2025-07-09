@@ -161,19 +161,31 @@ with tabs[2]:
         lines = vtt_text.splitlines()
         srt_lines = []
         counter = 1
+        buffer = []
 
         for line in lines:
             if re.match(r"\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}", line):
+                if buffer:
+                    srt_lines.extend(buffer)
+                    srt_lines.append("")  # blank line between blocks
+                    buffer = []
+
                 start, end = line.split(" --> ")
                 start = start.replace(".", ",")
                 end = end.replace(".", ",")
-                srt_lines.append(str(counter))
-                srt_lines.append(f"{start} --> {end}")
+                buffer.append(str(counter))
+                buffer.append(f"{start} --> {end}")
                 counter += 1
             elif line.strip() == "WEBVTT" or line.strip() == "":
                 continue
             else:
-                srt_lines.append(line)
+                buffer.append(line)
+
+        # Add final block
+        if buffer:
+            srt_lines.extend(buffer)
+            srt_lines.append("")
+
         return "\n".join(srt_lines)
 
     if uploaded_vtt_file:
