@@ -16,9 +16,10 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.title("🎬 SRTool")
+st.title("SRTool")
 
-tabs = st.tabs(["🧪 Converter", "⏱ Shifter"])
+tabs = st.tabs(["🧪 Converter", "⏱ Shifter", "🔁 VTTtoSRT"])
+
 
 # === Tab 1: Encoding Converter ===
 with tabs[0]:
@@ -99,7 +100,6 @@ with tabs[1]:
                     start_dt -= delta
                     end_dt -= delta
 
-                # Avoid negative timestamps
                 start_dt = max(start_dt, datetime.strptime("00:00:00,000", "%H:%M:%S,%f"))
                 end_dt = max(end_dt, datetime.strptime("00:00:00,000", "%H:%M:%S,%f"))
 
@@ -112,7 +112,6 @@ with tabs[1]:
 
     if uploaded_shift_file and st.button("↔️ Shift Timestamps"):
         try:
-            # Try utf-8 first
             try:
                 raw_text = uploaded_shift_file.read().decode("utf-8")
             except UnicodeDecodeError:
@@ -146,5 +145,54 @@ with tabs[1]:
             label="📥 Download Shifted .srt File",
             data=shifted_file,
             file_name=shifted_file.name,
+            mime="text/plain"
+        )
+
+
+# === Tab 3: VTT to SRT ===
+with tabs[2]:
+    st.header("Convert .vtt to .srt")
+
+    st.markdown("Upload a `.vtt` subtitle file and this tool will convert it to `.srt` format.")
+
+    uploaded_vtt_file = st.file_uploader("📤 Upload your .vtt file", type=["vtt"])
+
+    def convert_vtt_to_srt(vtt_text):
+        lines = vtt_text.splitlines()
+        srt_lines = []
+        counter = 1
+
+        for line in lines:
+            if re.match(r"\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}", line):
+                start, end = line.split(" --> ")
+                start = start.replace(".", ",")
+                end = end.replace(".", ",")
+                srt_lines.append(str(counter))
+                srt_lines.append(f"{start} --> {end}")
+                counter += 1
+            elif line.strip() == "WEBVTT" or line.strip() == "":
+                continue
+            else:
+                srt_lines.append(line)
+        return "\n".join(srt_lines)
+
+    if uploaded_vtt_file:
+        try:
+            vtt_content = uploaded_vtt_file.read().decode("utf-8")
+        except UnicodeDecodeError:
+            uploaded_vtt_file.seek(0)
+            vtt_content = uploaded_vtt_file.read().decode("utf-8-sig")
+
+        srt_content = convert_vtt_to_srt(vtt_content)
+
+        srt_file = io.BytesIO(srt_content.encode("utf-8"))
+        srt_file.name = uploaded_vtt_file.name.replace(".vtt", ".srt")
+
+        st.success("✅ VTT file successfully converted to SRT!")
+
+        st.download_button(
+            label="📥 Download .srt File",
+            data=srt_file,
+            file_name=srt_file.name,
             mime="text/plain"
         )
