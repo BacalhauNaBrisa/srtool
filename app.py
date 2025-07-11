@@ -43,6 +43,14 @@ with tabs[0]:
             if st.button("🔁 Convert to UTF-8"):
                 try:
                     decoded_text = raw_data.decode(detected_encoding)
+                except UnicodeDecodeError:
+                    st.warning(f"⚠️ Failed to decode with `{detected_encoding}`. Trying fallback ISO-8859-1...")
+                    try:
+                        decoded_text = raw_data.decode("iso-8859-1")
+                        st.info("✅ Successfully decoded with ISO-8859-1 as fallback.")
+                    except Exception as e:
+                        st.error(f"❌ Fallback decoding failed too: {e}")
+                        st.stop()
                     utf8_bytes = decoded_text.encode("utf-8")
                     utf8_file = io.BytesIO(utf8_bytes)
                     utf8_file.name = uploaded_file.name.replace(".srt", "_utf8.srt")
