@@ -35,7 +35,7 @@ A free, open-source Streamlit Cloud app to manipulate subtitles.
 ## 📦 Install Locally
 
 ```bash
-git clone https://github.com/BacalhauNaBrisa/srt_encoding_converter.git
-cd srt_encoding_converter
+git clone https://github.com/BacalhauNaBrisa/srtool.git
+cd srtool
 pip install -r requirements.txt
 streamlit run app.py
