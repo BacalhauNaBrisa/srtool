@@ -22,9 +22,7 @@ jobs:
         run: |
           git commit --allow-empty -m "🛠 Keep-alive commit" || echo "Nothing to commit"
 
-      - name: Push with token
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
+      - name: Push changes using PAT
         run: |
-          git remote set-url origin https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}
+          git remote set-url origin https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}
           git push origin HEAD
