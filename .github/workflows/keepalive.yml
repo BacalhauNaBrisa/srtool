@@ -3,7 +3,7 @@ name: Keep Streamlit Alive
 on:
   schedule:
     - cron: '0 */6 * * *'  # Every 6 hours
-  workflow_dispatch:       # Allow manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   keepalive:
@@ -17,4 +17,4 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git commit --allow-empty -m "🛠 Keep-alive commit"
-          git push
+          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }} HEAD:main
