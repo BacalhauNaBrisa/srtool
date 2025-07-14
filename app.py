@@ -18,15 +18,13 @@ st.markdown(
 
 st.title("SRTool")
 
-tabs = st.tabs(["🧪 Converter", "⏱ Shifter", "🔁 VTTtoSRT"])
+tabs = st.tabs(["🧪 Converter", "⏱ Shifter", "🔁 VTTtoSRT", "📜 SSAtoSRT"])
 
 
 # === Tab 1: Encoding Converter ===
 with tabs[0]:
     st.header("Encoding Detection & Conversion")
-
-    st.markdown("Upload a `.srt` subtitle file and this app will detect its encoding. If it's not in UTF-8, you'll be able to convert and download it.")
-
+    st.markdown("Upload a `.srt` subtitle file and detect/convert its encoding to UTF-8.")
     uploaded_file = st.file_uploader("📤 Upload your .srt file", type=["srt"], key="converter")
 
     if uploaded_file:
@@ -34,88 +32,68 @@ with tabs[0]:
         detection = chardet.detect(raw_data)
         detected_encoding = detection.get("encoding", "Unknown")
         confidence = detection.get("confidence", 0)
-
         st.write(f"**Detected Encoding:** `{detected_encoding}` (Confidence: {confidence:.2f})")
 
         if detected_encoding.lower() not in ("utf-8", "utf-8-sig"):
             st.warning("The file is not in UTF-8 encoding.")
-            
             if st.button("🔁 Convert to UTF-8"):
                 try:
                     decoded_text = raw_data.decode(detected_encoding)
                 except UnicodeDecodeError:
-                    st.warning(f"⚠️ Failed to decode with `{detected_encoding}`. Trying fallback ISO-8859-1...")
+                    st.warning(f"⚠️ Failed to decode with `{detected_encoding}`. Trying ISO-8859-1 fallback...")
                     try:
                         decoded_text = raw_data.decode("iso-8859-1")
-                        st.info("✅ Successfully decoded with ISO-8859-1 as fallback.")
+                        st.info("✅ Decoded with ISO-8859-1 fallback.")
                     except Exception as e:
-                        st.error(f"❌ Fallback decoding failed too: {e}")
+                        st.error(f"❌ Fallback decoding failed: {e}")
                         st.stop()
-                    utf8_bytes = decoded_text.encode("utf-8")
-                    utf8_file = io.BytesIO(utf8_bytes)
-                    utf8_file.name = uploaded_file.name.replace(".srt", "_utf8.srt")
-
-                    st.success("File converted to UTF-8!")
-
-                    st.download_button(
-                        label="📥 Download UTF-8 .srt file",
-                        data=utf8_file,
-                        file_name=utf8_file.name,
-                        mime="text/plain"
-                    )
-                except Exception as e:
-                    st.error(f"Conversion failed: {e}")
+                utf8_bytes = decoded_text.encode("utf-8")
+                utf8_file = io.BytesIO(utf8_bytes)
+                utf8_file.name = uploaded_file.name.replace(".srt", "_utf8.srt")
+                st.success("File converted to UTF-8!")
+                st.download_button(
+                    label="📥 Download UTF-8 .srt",
+                    data=utf8_file,
+                    file_name=utf8_file.name,
+                    mime="text/plain"
+                )
         else:
-            st.success("✅ This file is already in UTF-8 encoding.")
-
+            st.success("✅ Already in UTF-8 encoding.")
 
 # === Tab 2: Timestamp Shifter ===
 with tabs[1]:
     st.header("Subtitle Timestamp Shifter")
-
-    st.markdown("Upload a `.srt` file, select the shift direction and enter a time delta (format: `HH:MM:SS,mmm`).")
-
-    uploaded_shift_file = st.file_uploader("📤 Upload your .srt file", type=["srt"], key="shifter")
+    st.markdown("Upload an `.srt` file, choose shift direction and delta (HH:MM:SS,mmm).")
+    uploaded_shift_file = st.file_uploader("📤 Upload .srt for shifting", type=["srt"], key="shifter")
 
     col1, col2 = st.columns([1, 3])
     with col1:
         direction = st.selectbox("Shift", ["+", "-"])
     with col2:
-        delta_str = st.text_input("Time to shift (HH:MM:SS,mmm)", value="00:00:01,000")
+        delta_str = st.text_input("Time delta (HH:MM:SS,mmm)", "00:00:01,000")
 
     def parse_srt_time(t):
         return datetime.strptime(t, "%H:%M:%S,%f")
 
     def format_srt_time(dt):
-        return dt.strftime("%H:%M:%S,%f")[:-3]  # drop last 3 digits of microseconds
+        return dt.strftime("%H:%M:%S,%f")[:-3]
 
     def shift_srt(content, direction, delta):
         pattern = re.compile(r"(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})")
-        lines = content.splitlines()
         new_lines = []
-
-        for line in lines:
-            match = pattern.match(line)
-            if match:
-                start, end = match.groups()
-                start_dt = parse_srt_time(start)
-                end_dt = parse_srt_time(end)
-
-                if direction == "+":
-                    start_dt += delta
-                    end_dt += delta
-                else:
-                    start_dt -= delta
-                    end_dt -= delta
-
-                start_dt = max(start_dt, datetime.strptime("00:00:00,000", "%H:%M:%S,%f"))
-                end_dt = max(end_dt, datetime.strptime("00:00:00,000", "%H:%M:%S,%f"))
-
-                new_line = f"{format_srt_time(start_dt)} --> {format_srt_time(end_dt)}"
-                new_lines.append(new_line)
+        for line in content.splitlines():
+            m = pattern.match(line)
+            if m:
+                start, end = m.groups()
+                sd = parse_srt_time(start)
+                ed = parse_srt_time(end)
+                sd = sd + delta if direction == "+" else sd - delta
+                ed = ed + delta if direction == "+" else ed - delta
+                sd = max(sd, datetime.strptime("00:00:00,000","%H:%M:%S,%f"))
+                ed = max(ed, datetime.strptime("00:00:00,000","%H:%M:%S,%f"))
+                new_lines.append(f"{format_srt_time(sd)} --> {format_srt_time(ed)}")
             else:
                 new_lines.append(line)
-
         return "\n".join(new_lines)
 
     if uploaded_shift_file and st.button("↔️ Shift Timestamps"):
@@ -126,93 +104,121 @@ with tabs[1]:
                 uploaded_shift_file.seek(0)
                 raw_text = uploaded_shift_file.read().decode("utf-8-sig")
         except UnicodeDecodeError:
-            st.error("❌ File is not UTF-8 or UTF-8-SIG. Please convert it first using the Converter tab.")
+            st.error("❌ Please convert to UTF-8 first.")
             st.stop()
 
         try:
-            hours, minutes, seconds_millis = delta_str.strip().split(":")
-            seconds, millis = seconds_millis.split(",")
-            delta = timedelta(
-                hours=int(hours),
-                minutes=int(minutes),
-                seconds=int(seconds),
-                milliseconds=int(millis)
-            )
-        except Exception:
-            st.error("⚠️ Invalid time format. Use `HH:MM:SS,mmm`.")
+            h, m, s_ms = delta_str.split(":")
+            s, ms = s_ms.split(",")
+            delta = timedelta(hours=int(h), minutes=int(m), seconds=int(s), milliseconds=int(ms))
+        except:
+            st.error("⚠️ Invalid format. Use HH:MM:SS,mmm.")
             st.stop()
 
-        shifted_content = shift_srt(raw_text, direction, delta)
-
-        shifted_file = io.BytesIO(shifted_content.encode("utf-8"))
-        shifted_file.name = uploaded_shift_file.name.replace(".srt", f"_shifted_{direction}{delta_str.replace(':', '').replace(',', '')}.srt")
-
-        st.success("✅ Subtitle timestamps shifted!")
-
-        st.download_button(
-            label="📥 Download Shifted .srt File",
-            data=shifted_file,
-            file_name=shifted_file.name,
-            mime="text/plain"
-        )
-
+        shifted = shift_srt(raw_text, direction, delta)
+        out = io.BytesIO(shifted.encode("utf-8"))
+        out.name = uploaded_shift_file.name.replace(".srt", f"_shifted_{direction}{delta_str.replace(':','').replace(',','')}.srt")
+        st.success("✅ Timestamps shifted!")
+        st.download_button("📥 Download shifted .srt", data=out, file_name=out.name, mime="text/plain")
 
 # === Tab 3: VTT to SRT ===
 with tabs[2]:
-    st.header("Convert .vtt to .srt")
-
-    st.markdown("Upload a `.vtt` subtitle file and this tool will convert it to `.srt` format.")
-
-    uploaded_vtt_file = st.file_uploader("📤 Upload your .vtt file", type=["vtt"])
+    st.header("Convert VTT to SRT")
+    st.markdown("Upload a `.vtt` file to convert to `.srt`.")
+    uploaded_vtt_file = st.file_uploader("📤 Upload .vtt file", type=["vtt"], key="vttsrt")
 
     def convert_vtt_to_srt(vtt_text):
         lines = vtt_text.splitlines()
         srt_lines = []
         counter = 1
         buffer = []
-
         for line in lines:
             if re.match(r"\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}", line):
                 if buffer:
                     srt_lines.extend(buffer)
-                    srt_lines.append("")  # blank line between blocks
+                    srt_lines.append("")
                     buffer = []
-
                 start, end = line.split(" --> ")
-                start = start.replace(".", ",")
-                end = end.replace(".", ",")
+                start = start.replace('.', ',')
+                end = end.replace('.', ',')
                 buffer.append(str(counter))
                 buffer.append(f"{start} --> {end}")
                 counter += 1
-            elif line.strip() == "WEBVTT" or line.strip() == "":
-                continue
+            elif line.strip() in ("WEBVTT", ""): continue
             else:
                 buffer.append(line)
-
-        # Add final block
         if buffer:
             srt_lines.extend(buffer)
             srt_lines.append("")
-
         return "\n".join(srt_lines)
 
     if uploaded_vtt_file:
         try:
-            vtt_content = uploaded_vtt_file.read().decode("utf-8")
+            txt = uploaded_vtt_file.read().decode("utf-8")
         except UnicodeDecodeError:
             uploaded_vtt_file.seek(0)
-            vtt_content = uploaded_vtt_file.read().decode("utf-8-sig")
+            txt = uploaded_vtt_file.read().decode("utf-8-sig")
+        srt = convert_vtt_to_srt(txt)
+        out = io.BytesIO(srt.encode("utf-8"))
+        out.name = uploaded_vtt_file.name.replace(".vtt", ".srt")
+        st.success("✅ Converted to .srt!")
+        st.download_button("📥 Download .srt", data=out, file_name=out.name, mime="text/plain")
 
-        srt_content = convert_vtt_to_srt(vtt_content)
+# === Tab 4: SSA/ASS to SRT ===
+with tabs[3]:
+    st.header("Convert SSA/ASS to SRT")
+    st.markdown("Upload a `.ssa` or `.ass` file to convert to `.srt`.")
+    uploaded_ssa_file = st.file_uploader("📤 Upload .ssa/.ass file", type=["ssa", "ass"], key="ssasrt")
 
-        srt_file = io.BytesIO(srt_content.encode("utf-8"))
-        srt_file.name = uploaded_vtt_file.name.replace(".vtt", ".srt")
+    def convert_ssa_to_srt(text):
+        lines = text.splitlines()
+        in_events = False
+        format_fields = []
+        idx_start = idx_end = idx_text = None
+        srt_lines = []
+        counter = 1
+        for raw in lines:
+            line = raw.strip()
+            if not in_events:
+                if line.lower() == "[events]":
+                    in_events = True
+                continue
+            if line.lower().startswith("format:"):
+                fmt = line.split(":",1)[1].strip()
+                format_fields = [f.strip() for f in fmt.split(",")]
+                lfields = [f.lower() for f in format_fields]
+                idx_start = lfields.index("start")
+                idx_end = lfields.index("end")
+                idx_text = lfields.index("text")
+                continue
+            if line.lower().startswith("dialogue:"):
+                content = line.split(":",1)[1].lstrip()
+                parts = content.split(",", len(format_fields)-1)
+                start = parts[idx_start]
+                end = parts[idx_end]
+                txt = parts[idx_text]
+                txt = re.sub(r"\{.*?\}", "", txt)
+                txt = txt.replace("\\N","\n").replace("\\n","\n")
+                def a2s(t):
+                    hh,mm,ss_cs = t.split(":",2)
+                    ss,cs = ss_cs.split(".",1)
+                    ms = int(cs.ljust(3,'0')[:3])
+                    return f"{int(hh):02}:{int(mm):02}:{int(ss):02},{ms:03}"
+                srt_lines.append(str(counter))
+                srt_lines.append(f"{a2s(start)} --> {a2s(end)}")
+                srt_lines.append(txt)
+                srt_lines.append("")
+                counter +=1
+        return "\n".join(srt_lines)
 
-        st.success("✅ VTT file successfully converted to SRT!")
-
-        st.download_button(
-            label="📥 Download .srt File",
-            data=srt_file,
-            file_name=srt_file.name,
-            mime="text/plain"
-        )
+    if uploaded_ssa_file:
+        try:
+            content = uploaded_ssa_file.read().decode("utf-8")
+        except UnicodeDecodeError:
+            uploaded_ssa_file.seek(0)
+            content = uploaded_ssa_file.read().decode("utf-8-sig")
+        srt_content = convert_ssa_to_srt(content)
+        out = io.BytesIO(srt_content.encode("utf-8"))
+        out.name = uploaded_ssa_file.name.rsplit('.',1)[0] + '.srt'
+        st.success("✅ Converted SSA/ASS to .srt!")
+        st.download_button("📥 Download .srt", data=out, file_name=out.name, mime="text/plain")
