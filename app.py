@@ -18,8 +18,14 @@ st.markdown(
 
 st.title("SRTool")
 
-tabs = st.tabs(["🧪 Converter", "⏱ Shifter", "🔁 VTTtoSRT", "📜 SSAtoSRT"])
-
+# Define tabs including the new Splitter
+tabs = st.tabs([
+    "🧪 Converter",
+    "⏱ Shifter",
+    "🔁 VTTtoSRT",
+    "📜 SSAtoSRT",
+    "✂️ Splitter"
+])
 
 # === Tab 1: Encoding Converter ===
 with tabs[0]:
@@ -117,9 +123,17 @@ with tabs[1]:
 
         shifted = shift_srt(raw_text, direction, delta)
         out = io.BytesIO(shifted.encode("utf-8"))
-        out.name = uploaded_shift_file.name.replace(".srt", f"_shifted_{direction}{delta_str.replace(':','').replace(',','')}.srt")
+        out.name = uploaded_shift_file.name.replace(
+            ".srt",
+            f"_shifted_{direction}{delta_str.replace(':','').replace(',','')} .srt"
+        )
         st.success("✅ Timestamps shifted!")
-        st.download_button("📥 Download shifted .srt", data=out, file_name=out.name, mime="text/plain")
+        st.download_button(
+            "📥 Download shifted .srt",
+            data=out,
+            file_name=out.name,
+            mime="text/plain"
+        )
 
 # === Tab 3: VTT to SRT ===
 with tabs[2]:
@@ -186,39 +200,3 @@ with tabs[3]:
             if line.lower().startswith("format:"):
                 fmt = line.split(":",1)[1].strip()
                 format_fields = [f.strip() for f in fmt.split(",")]
-                lfields = [f.lower() for f in format_fields]
-                idx_start = lfields.index("start")
-                idx_end = lfields.index("end")
-                idx_text = lfields.index("text")
-                continue
-            if line.lower().startswith("dialogue:"):
-                content = line.split(":",1)[1].lstrip()
-                parts = content.split(",", len(format_fields)-1)
-                start = parts[idx_start]
-                end = parts[idx_end]
-                txt = parts[idx_text]
-                txt = re.sub(r"\{.*?\}", "", txt)
-                txt = txt.replace("\\N","\n").replace("\\n","\n")
-                def a2s(t):
-                    hh,mm,ss_cs = t.split(":",2)
-                    ss,cs = ss_cs.split(".",1)
-                    ms = int(cs.ljust(3,'0')[:3])
-                    return f"{int(hh):02}:{int(mm):02}:{int(ss):02},{ms:03}"
-                srt_lines.append(str(counter))
-                srt_lines.append(f"{a2s(start)} --> {a2s(end)}")
-                srt_lines.append(txt)
-                srt_lines.append("")
-                counter +=1
-        return "\n".join(srt_lines)
-
-    if uploaded_ssa_file:
-        try:
-            content = uploaded_ssa_file.read().decode("utf-8")
-        except UnicodeDecodeError:
-            uploaded_ssa_file.seek(0)
-            content = uploaded_ssa_file.read().decode("utf-8-sig")
-        srt_content = convert_ssa_to_srt(content)
-        out = io.BytesIO(srt_content.encode("utf-8"))
-        out.name = uploaded_ssa_file.name.rsplit('.',1)[0] + '.srt'
-        st.success("✅ Converted SSA/ASS to .srt!")
-        st.download_button("📥 Download .srt", data=out, file_name=out.name, mime="text/plain")
