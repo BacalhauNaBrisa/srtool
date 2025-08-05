@@ -177,4 +177,108 @@ with tabs[2]:
 # === Tab 4: SSA/ASS to SRT ===
 with tabs[3]:
     st.header("Convert SSA/ASS to SRT")
-    st.markdown("Upload a `.ssa` or `.ass` file and
+    st.markdown("Upload a `.ssa` or `.ass` file and convert it to `.srt`.")
+    uploaded_ssa_file = st.file_uploader("📤 Upload .ssa/.ass file", type=["ssa", "ass"], key="ssasrt")
+
+    def convert_ssa_to_srt(txt):
+        lines = txt.splitlines()
+        in_events = False
+        format_fields = []
+        idx_start = idx_end = idx_text = None
+        srt_lines = []
+        counter = 1
+        for raw in lines:
+            l = raw.strip()
+            if not in_events:
+                if l.lower() == "[events]":
+                    in_events = True
+                continue
+            if l.lower().startswith("format:"):
+                fmt = l.split(":", 1)[1].strip()
+                format_fields = [f.strip() for f in fmt.split(",")]
+                lfields = [f.lower() for f in format_fields]
+                try:
+                    idx_start = lfields.index("start")
+                    idx_end = lfields.index("end")
+                    idx_text = lfields.index("text")
+                except ValueError:
+                    st.error("Could not locate Start/End/Text in format fields.")
+                    return ""
+                continue
+            if l.lower().startswith("dialogue:"):
+                content = raw.split(":", 1)[1].lstrip()
+                parts = content.split(",", len(format_fields) - 1)
+                start = parts[idx_start]
+                end = parts[idx_end]
+                text = parts[idx_text]
+                text = re.sub(r"\{.*?\}", "", text)
+                text = text.replace("\\N", "\n").replace("\\n", "\n")
+                def ssa_time_to_srt(t):
+                    hh, mm, ss_cs = t.split(":", 2)
+                    ss, cs = ss_cs.split(".", 1)
+                    ms = int(cs.ljust(3, "0")[:3])
+                    return f"{int(hh):02}:{int(mm):02}:{int(ss):02},{ms:03}"
+                srt_lines.append(str(counter))
+                srt_lines.append(f"{ssa_time_to_srt(start)} --> {ssa_time_to_srt(end)}")
+                srt_lines.extend(text.split("\n"))
+                srt_lines.append("")
+                counter += 1
+        return "\n".join(srt_lines)
+
+    if uploaded_ssa_file:
+        try:
+            content = uploaded_ssa_file.read().decode("utf-8")
+        except UnicodeDecodeError:
+            uploaded_ssa_file.seek(0)
+            content = uploaded_ssa_file.read().decode("utf-8-sig")
+        srt_content = convert_ssa_to_srt(content)
+        if srt_content:
+            srt_file = io.BytesIO(srt_content.encode("utf-8"))
+            srt_file.name = uploaded_ssa_file.name.rsplit(".", 1)[0] + ".srt"
+            st.success("Converted SSA/ASS to .srt!")
+            st.download_button("📥 Download .srt", data=srt_file, file_name=srt_file.name, mime="text/plain")
+
+# === Tab 5: Splitter ===
+with tabs[4]:
+    st.header("Split SRT File")
+    st.markdown("Upload a `.srt` file and specify a split index. Generates two reindexed .srt files.")
+    uploaded_split_file = st.file_uploader("📤 Upload .srt to split", type=["srt"], key="splitter")
+    split_index = st.number_input("Split after block number", min_value=1, step=1, key="splitidx")
+
+    if uploaded_split_file and st.button("✂️ Split File", key="splitbtn"):
+        text = uploaded_split_file.read().decode("utf-8-sig")
+        blocks = [b.strip() for b in text.split("\n\n") if b.strip()]
+        part1 = blocks[:split_index]
+        part2 = blocks[split_index:]
+        def build_srt(blocks):
+            lines = []
+            for i, b in enumerate(blocks, 1):
+                ps = b.splitlines()
+                times = ps[1]
+                content = ps[2:]
+                lines.append(str(i))
+                lines.append(times)
+                lines.extend(content)
+                lines.append("")
+            return "\n".join(lines)
+        s1 = build_srt(part1)
+        s2 = build_srt(part2)
+        f1 = io.BytesIO(s1.encode("utf-8"))
+        f1.name = uploaded_split_file.name.replace(".srt", "_part1.srt")
+        f2 = io.BytesIO(s2.encode("utf-8"))
+        f2.name = uploaded_split_file.name.replace(".srt", "_part2.srt")
+        st.success("Split complete!")
+        st.download_button("📥 Download Part 1", data=f1, file_name=f1.name, mime="text/plain")
+        st.download_button("📥 Download Part 2", data=f2, file_name=f2.name, mime="text/plain")
+
+# === Buy Me A Coffee Button ===
+st.markdown(
+    """
+    <div style="text-align: center; margin-top: 3em;">
+        <a href="https://www.buymeacoffee.com/bacalhau" target="_blank">
+            <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" >
+        </a>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
