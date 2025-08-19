@@ -278,7 +278,7 @@ st.markdown(
       <div style="max-width:700px;width:100%;">
         <iframe id="kofiframe"
                 src="https://ko-fi.com/bacalhaunabrisa/?hidefeed=true&widget=true&embed=true&preview=true"
-                style="border:none;width:100%;padding:4px;background:#f9f9f9;"
+                style="border:none;width:100%;padding:4px;background:transparent;"
                 height="712"
                 title="bacalhaunabrisa">
         </iframe>
