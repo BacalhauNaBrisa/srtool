@@ -39,7 +39,7 @@ with tabs[0]:
         enc = det.get("encoding", "Unknown")
         conf = det.get("confidence", 0)
         st.write(f"**Detected Encoding:** `{enc}` (Confidence: {conf:.2f})")
-        if enc.lower() not in ("utf-8","utf-8-sig"):
+        if enc and enc.lower() not in ("utf-8","utf-8-sig"):
             st.warning("File is not UTF-8.")
             if st.button("🔁 Convert to UTF-8"):
                 try:
@@ -271,13 +271,18 @@ with tabs[4]:
         st.download_button("📥 Download Part 1", data=f1, file_name=f1.name, mime="text/plain")
         st.download_button("📥 Download Part 2", data=f2, file_name=f2.name, mime="text/plain")
 
-# === Buy Me A Coffee Button ===
+# === Ko-Fi Donation Panel (replaces Buy Me A Coffee) ===
 st.markdown(
     """
-    <div style="text-align: center; margin-top: 3em;">
-        <a href="https://www.buymeacoffee.com/bacalhau" target="_blank">
-            <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" >
-        </a>
+    <div style="display:flex;justify-content:center;margin-top:3em;">
+      <div style="max-width:700px;width:100%;">
+        <iframe id="kofiframe"
+                src="https://ko-fi.com/bacalhaunabrisa/?hidefeed=true&widget=true&embed=true&preview=true"
+                style="border:none;width:100%;padding:4px;background:#f9f9f9;"
+                height="712"
+                title="bacalhaunabrisa">
+        </iframe>
+      </div>
     </div>
     """,
     unsafe_allow_html=True
